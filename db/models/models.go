@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/to4to/csrf-go/randomstrings"
 )
 
 type User struct {
@@ -17,5 +18,8 @@ type TokenClaims struct {
 }
 
 const RefeshTokenValidTime = time.Hour * 72
+const AuthTokenValidTime = time.Minute * 15
 
-
+func GenerateCSRFSecret() (string, error) {
+	return randomstrings.GenerateRandomString(32)
+}
