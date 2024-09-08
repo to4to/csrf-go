@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/justinas/alice"
+	myjwt "github.com/to4to/csrf-go/server/middleware/myJWT"
 )
 
 func NewHandler() http.Handler {
@@ -82,8 +83,42 @@ func nullifyTokenCookies(w http.ResponseWriter, r http.Request) {
 	}
 
 	http.SetCookie(w, &refreshCookie)
+
+	RefreshCookie, refreshErr := r.Cookie("RefreshToken")
+
+	if refreshErr == http.ErrNoCookie {
+		return
+	} else if refreshErr != nil {
+		log.Panic("panic %+v ", refreshErr)
+		http.Error(w, http.StatusText(500), 500)
+	}
+
+	myjwt.RevokeRefreshToken(RefreshCookie.Value)
 }
 
-func setAuthAndRefreshCookies() {}
+func setAuthAndRefreshCookies(w http.ResponseWriter, authTokenString, refreshTokenString string) {
+	authCookie := http.Cookie{
+		Name:     "AuthToken",
+		Value:    authTokenString,
+		HttpOnly: true,
+	}
 
-func grabCsrfFromRequest(r *http.Request) string {}
+	http.SetCookie(w, &authCookie)
+	refreshCookie := http.Cookie{
+		Name:     "RefreshToken",
+		Value:    refreshTokenString,
+		HttpOnly: true,
+	}
+	http.SetCookie(w, &refreshCookie)
+}
+
+func grabCsrfFromRequest(r *http.Request) string {
+	csrfFrom := r.FormValue("X-CSRF-Token")
+
+	if csrfFrom != "" {
+		return csrfFrom
+	} else {
+
+		return r.Header.Get("X-CSRF-Token")
+	}
+}
